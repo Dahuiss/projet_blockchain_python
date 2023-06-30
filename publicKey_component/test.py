@@ -1,33 +1,60 @@
 import pytest
+import coincurve
+import binascii
+from hashlib import sha256
 import public_key as ecdsa
 
 def test_recover_pub_key_ecdsa_valid():
-    with open('signature.hex', 'r') as f:
-        signature = f.read().strip()
-    with open('public.hex', 'r') as f:
-        public_key = f.read().strip()
+    # generate a private key
+    private_key = coincurve.PrivateKey()
+    # derive the public key
+    public_key_original = private_key.public_key.format(False)
+    # create a message
+    message = b'Hello, World!'
+    # hash the message
+    hashed_message = sha256(message).digest()
+    # sign the message
+    signature = private_key.sign_recoverable(hashed_message, hasher=None)
     
-    message = "Hello, World!"
-    print(public_key)
-    print("--------------------")
-    print(ecdsa.recover_public_key(signature, message))
-    print("********************")
-    # assert ecdsa.recover_public_key(signature, message) == public_key
+    # convert the signature and the public key to hex string
+    signature_hex = binascii.hexlify(signature).decode()
+    public_key_hex = binascii.hexlify(public_key_original).decode()
 
-def test_recover_pub_key_ecdsa_invalid_signature():
-    signature = "3046022100b12fe1c052a85e3a7356163ca9d12942f5f9f9e3b78f556aad2bb90a07f0aaf402202e6a6f1aaa1d3418f602dadc9b66a34a24e8ed7e620c378f57cbb8617894e632"
-    message = "Hello, World!"
-    with pytest.raises(RuntimeError):
-        ecdsa.recover_public_key(signature, message)
+    # recover the public key
+    public_key_recovered = ecdsa.recover_public_key(signature_hex)
+    
+    assert public_key_recovered == public_key_hex
 
-def test_recover_pub_key_ecdsa_wrong_signature_type():
-    signature = 123
-    message = "Hello, World!"
-    with pytest.raises(TypeError):
-        ecdsa.recover_public_key(signature, message)
 
-def test_recover_pub_key_ecdsa_wrong_message_type():
-    signature = "3045022100c12fe1c052a85e3a7356163ca9d12942f5f9f9e3b78f556aad2bb90a07f0aaf402202e6a6f1aaa1d3418f602dadc9b66a34a24e8ed7e620c378f57cbb8617894e632"
-    message = 123
-    with pytest.raises(TypeError):
-        ecdsa.recover_public_key(signature, message)
+def generate_test_cases(n):
+    # Create an empty list to hold the test cases
+    test_cases = []
+
+    for _ in range(n):
+        # Generate a private key
+        private_key = coincurve.PrivateKey()
+        # Derive the public key
+        public_key_original = private_key.public_key.format(False)
+        # Create a message
+        message = b'Hello, World!'
+        # Hash the message
+        hashed_message = sha256(message).digest()
+        # Sign the message
+        signature = private_key.sign_recoverable(hashed_message, hasher=None)
+        
+        # Convert the signature and the public key to hex string
+        signature_hex = binascii.hexlify(signature).decode()
+        public_key_hex = binascii.hexlify(public_key_original).decode()
+        
+        # Recover the public key
+        public_key_recovered = ecdsa.recover_public_key(signature_hex)
+        
+        # Add the test case to the list
+        test_cases.append({
+            'original_public_key': public_key_hex,
+            'signature': signature_hex,
+            'recovered_public_key': public_key_recovered,
+        })
+
+    return test_cases
+

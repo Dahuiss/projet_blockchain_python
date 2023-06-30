@@ -1,70 +1,53 @@
 # Récupération de clé publique ECDSA
 
-Ce code fournit une implémentation en C++ pour récupérer une clé publique à partir d'un message signé en utilisant ECDSA (Elliptic Curve Digital Signature Algorithm). Le code utilise la bibliothèque OpenSSL et inclut les fichiers d'en-tête nécessaires.
+Ce code fournit une implémentation en C++ pour récupérer une clé publique à partir d'une signature en utilisant ECDSA (Elliptic Curve Digital Signature Algorithm). Le code utilise la bibliothèque secp256k1 et inclut les fichiers d'en-tête nécessaires.
 
 ## Dépendances
 
-- `iostream`
 - `stdexcept`
-- `openssl/ecdsa.h`
-- `openssl/obj_mac.h`
-- `openssl/bn.h`
+- `string`
 - `pybind11/pybind11.h`
+- `stdio.h`
+- `secp256k1_recovery.h`
 
 Assurez-vous d'avoir installé ces dépendances avant de compiler le code.
 
 ## Fonction : recover_public_key
 
-La fonction `recover_public_key` permet de récupérer une clé publique à partir d'un message signé en utilisant ECDSA. Voici les détails de la fonction :
+La fonction `recover_public_key` permet de récupérer une clé publique à partir d'une signature en utilisant ECDSA. Voici les détails de la fonction :
 
 ```cpp
-std::string recover_public_key(const std::string& signature, const std::string& message)
+std::string recover_public_key(std::string signature)
 ```
-# Récupération de clé publique ECDSA
 
-Ce code fournit une implémentation en C++ pour récupérer une clé publique à partir d'un message signé en utilisant ECDSA (Elliptic Curve Digital Signature Algorithm). Le code utilise la bibliothèque OpenSSL et inclut les fichiers d'en-tête nécessaires.
+**Paramètres**
+`signature` : La signature à partir de laquelle la clé publique doit être récupérée.
 
-## Paramètres
-
-- `signature` : La signature du message signé.
-- `message` : Le message d'origine.
-
-## Valeur de retour
-
+**Valeur de retour**
 La fonction renvoie la clé publique récupérée sous forme de chaîne de caractères.
 
-## Exceptions
+**Exceptions**
+La fonction peut générer une exception `std::invalid_argument` si la longueur de la signature est invalide ou si le format de la signature est invalide. Elle peut également générer une exception `std::runtime_error` si la récupération de la clé publique échoue.
 
-La fonction peut générer une exception `std::runtime_error` si la récupération de la clé publique échoue.
-
-## Module Pybind11 : public_key
-
-Ce code inclut également une définition de module Pybind11, permettant d'exposer la fonction `recover_public_key` à Python. Le module est nommé "ecdsa_publickey_recovery".
-
-## Utilisation en Python
-
+**Utilisation en Python**
 ```python
 import public_key
+recovered_key = public_key.recover_public_key(signature)
 ```
-recovered_key = public_key.recover_public_key(signature, message)
-La fonction `recover_public_key` peut être appelée depuis Python en fournissant les arguments `signature` et `message`, et elle renverra la clé publique récupérée.
+
+**Gestion de l'absence de '0x' dans la signature**
+
+Dans Ethereum et de nombreux autres réseaux de blockchain, les valeurs hexadécimales sont souvent préfixées par " 0x ". Cependant, dans certains cas, la signature que nous recevons peut ne pas commencer par '0x'. Notre fonction `recover_public_key` doit gérer correctement de tels scénarios. 
+
+```cpp
+// Check if the signature starts with '0x' and remove it
+if (signature.substr(0, 2) == "0x") {
+    signature = signature.substr(2);
+}
+```
+La fonction `recover_public_key` peut être appelée depuis Python en fournissant l'argument `signature`, et elle renverra la clé publique récupérée.
 
 ## Lancement du projet
-```bash
-openssl ecparam -genkey -name secp256k1 -noout -out private.pem
-
-openssl ec -in private.pem -pubout -out public.pem
-
-echo "Hello, World!" > message.txt
-
-openssl dgst -sha256 -sign private.pem -out signature.der message.txt
-
-openssl dgst -sha256 -verify public.pem -signature signature.der message.txt
-
-xxd -p -c 256 signature.der > signature.hex
-
-xxd -p -c 256 public.pem > public.hex
-
-make
-bash
-Copy code
+- git clone https://github.com/Dahuiss/projet_blockchain_python.git
+- cd projet_blockchain_python/publicKey_component
+- make
