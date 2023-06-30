@@ -13,3 +13,6 @@ ${LIBSO} : ${LIBSO_OBJS}
 
 ${LIB} : $ ${LIB_OBJS}
 	ar -cr $@ $^
+
+${LIBSO} : ${LIBSO_OBJS}
+	g++ -o $@ -shared ${LDFLAGS} $^ -lcrypto -lssl
